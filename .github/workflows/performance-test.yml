@@ -1,4 +1,4 @@
-name: JMeter NGINX Load Test
+name: JMeter Performance Tests
 
 on:
   push:
@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  performance-test:
+  baseline-test:
     runs-on: ubuntu-latest
 
     steps:
@@ -18,30 +18,68 @@ jobs:
         run: |
           docker run -d --name local-nginx -p 8080:80 nginx
           sleep 5
-          curl -I http://localhost:8080/
 
       - name: Install Apache JMeter
         run: |
           wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
           tar -xzf apache-jmeter-5.6.3.tgz
 
-      - name: Run JMeter load test
+      - name: Run baseline test
         run: |
           apache-jmeter-5.6.3/bin/jmeter \
             -n \
-            -t nginx-load-test.jmx \
-            -l results-${{ github.run_number }}.jtl \
+            -t baseline-test.jmx \
+            -l baseline-results.jtl \
             -e \
-            -o report-${{ github.run_number }}
+            -o baseline-report
 
-      - name: Upload JMeter HTML report
+      - name: Upload baseline HTML report
         uses: actions/upload-artifact@v4
         with:
-          name: jmeter-html-report-${{ github.run_number }}
-          path: report-${{ github.run_number }}/
+          name: baseline-html-report
+          path: baseline-report/
 
-      - name: Upload raw JMeter results
+      - name: Upload baseline raw results
         uses: actions/upload-artifact@v4
         with:
-          name: jmeter-raw-results-${{ github.run_number }}
-          path: results-${{ github.run_number }}.jtl
+          name: baseline-raw-results
+          path: baseline-results.jtl
+
+  load-test:
+    runs-on: ubuntu-latest
+    needs: baseline-test
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start NGINX container
+        run: |
+          docker run -d --name local-nginx -p 8080:80 nginx
+          sleep 5
+
+      - name: Install Apache JMeter
+        run: |
+          wget https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
+          tar -xzf apache-jmeter-5.6.3.tgz
+
+      - name: Run 1000-user load test
+        run: |
+          apache-jmeter-5.6.3/bin/jmeter \
+            -n \
+            -t loadtest-1000-users.jmx \
+            -l loadtest-results.jtl \
+            -e \
+            -o loadtest-report
+
+      - name: Upload load test HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: loadtest-html-report
+          path: loadtest-report/
+
+      - name: Upload load test raw results
+        uses: actions/upload-artifact@v4
+        with:
+          name: loadtest-raw-results
+          path: loadtest-results.jtl
