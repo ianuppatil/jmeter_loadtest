@@ -20,16 +20,31 @@ jobs:
           sleep 5
           curl -I http://localhost:8080/
 
-      - name: Run baseline test using JMeter Docker image
+      - name: Cache Apache JMeter
+        uses: actions/cache@v4
+        with:
+          path: apache-jmeter-5.6.3
+          key: apache-jmeter-5.6.3
+
+      - name: Install Apache JMeter
+        timeout-minutes: 5
+        run: |
+          if [ ! -d "apache-jmeter-5.6.3" ]; then
+            curl -L --connect-timeout 60 --retry 3 \
+              -o apache-jmeter-5.6.3.tgz \
+              https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
+
+            tar -xzf apache-jmeter-5.6.3.tgz
+          else
+            echo "Using cached Apache JMeter 5.6.3"
+          fi
+
+      - name: Run baseline test
         run: |
           rm -f baseline-results.jtl
           rm -rf baseline-report
 
-          docker run --rm \
-            --network host \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            justb4/jmeter:5.6.3 \
+          apache-jmeter-5.6.3/bin/jmeter \
             -n \
             -t baseline-test.jmx \
             -l baseline-results.jtl \
@@ -62,16 +77,31 @@ jobs:
           sleep 5
           curl -I http://localhost:8080/
 
-      - name: Run 1000-user load test using JMeter Docker image
+      - name: Cache Apache JMeter
+        uses: actions/cache@v4
+        with:
+          path: apache-jmeter-5.6.3
+          key: apache-jmeter-5.6.3
+
+      - name: Install Apache JMeter
+        timeout-minutes: 5
+        run: |
+          if [ ! -d "apache-jmeter-5.6.3" ]; then
+            curl -L --connect-timeout 60 --retry 3 \
+              -o apache-jmeter-5.6.3.tgz \
+              https://downloads.apache.org/jmeter/binaries/apache-jmeter-5.6.3.tgz
+
+            tar -xzf apache-jmeter-5.6.3.tgz
+          else
+            echo "Using cached Apache JMeter 5.6.3"
+          fi
+
+      - name: Run 1000-user load test
         run: |
           rm -f loadtest-results.jtl
           rm -rf loadtest-report
 
-          docker run --rm \
-            --network host \
-            -v ${{ github.workspace }}:/workspace \
-            -w /workspace \
-            justb4/jmeter:5.6.3 \
+          apache-jmeter-5.6.3/bin/jmeter \
             -n \
             -t loadtest-1000-users.jmx \
             -l loadtest-results.jtl \
