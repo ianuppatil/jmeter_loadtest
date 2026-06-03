@@ -20,28 +20,16 @@ jobs:
           sleep 5
           curl -I http://localhost:8080/
 
-      - name: Cache Apache JMeter
-        uses: actions/cache@v4
-        with:
-          path: apache-jmeter-5.6.3
-          key: jmeter-5.6.3
-
-      - name: Install Apache JMeter
-        timeout-minutes: 5
-        run: |
-          if [ ! -d "apache-jmeter-5.6.3" ]; then
-            wget --timeout=60 --tries=3 https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
-            tar -xzf apache-jmeter-5.6.3.tgz
-          else
-            echo "Using cached Apache JMeter 5.6.3"
-          fi
-
-      - name: Run baseline test
+      - name: Run baseline test using JMeter Docker image
         run: |
           rm -f baseline-results.jtl
           rm -rf baseline-report
 
-          apache-jmeter-5.6.3/bin/jmeter \
+          docker run --rm \
+            --network host \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            justb4/jmeter:5.6.3 \
             -n \
             -t baseline-test.jmx \
             -l baseline-results.jtl \
@@ -74,28 +62,16 @@ jobs:
           sleep 5
           curl -I http://localhost:8080/
 
-      - name: Cache Apache JMeter
-        uses: actions/cache@v4
-        with:
-          path: apache-jmeter-5.6.3
-          key: jmeter-5.6.3
-
-      - name: Install Apache JMeter
-        timeout-minutes: 5
-        run: |
-          if [ ! -d "apache-jmeter-5.6.3" ]; then
-            wget --timeout=60 --tries=3 https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz
-            tar -xzf apache-jmeter-5.6.3.tgz
-          else
-            echo "Using cached Apache JMeter 5.6.3"
-          fi
-
-      - name: Run 1000-user load test
+      - name: Run 1000-user load test using JMeter Docker image
         run: |
           rm -f loadtest-results.jtl
           rm -rf loadtest-report
 
-          apache-jmeter-5.6.3/bin/jmeter \
+          docker run --rm \
+            --network host \
+            -v ${{ github.workspace }}:/workspace \
+            -w /workspace \
+            justb4/jmeter:5.6.3 \
             -n \
             -t loadtest-1000-users.jmx \
             -l loadtest-results.jtl \
